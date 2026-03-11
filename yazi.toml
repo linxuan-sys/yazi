@@ -1,0 +1,48 @@
+[mgr]
+ratio = [1,4,3]
+sort_by ="extension"
+sort_sensitive = false
+sort_reverse = false
+sort_dir_first = true
+linemode = "btime"
+show_hidden = true
+show_symlink = true
+
+[preview]
+wrap = "yes"
+image_filter = "lanczos3"
+
+
+
+
+[plugin]
+  prepend_preloaders = [
+    { mime = "{audio,video,image}/*", run = "mediainfo" },
+    { mime = "application/subrip", run = "mediainfo" },
+    { mime = "application/postscript", run = "mediainfo" },
+    { url = "/run/user/1000/gvfs/**/*", run = "noop" },
+    { url = "/run/media/USER_NAME/**/*", run = "noop" },
+    { url = "*.csv", run = "duckdb", multi = false },  
+    { url = "*.tsv", run = "duckdb", multi = false },  
+    { url = "*.json", run = "duckdb", multi = false },  
+    { url = "*.parquet", run = "duckdb", multi = false },
+    { url = "*.xlsx", run = "duckdb", multi = false }
+  ]
+  prepend_previewers = [
+    { mime = "{audio,video,image}/*", run = "mediainfo"},
+    { mime = "application/subrip", run = "mediainfo" },
+    { mime = "application/postscript", run = "mediainfo" },
+    { url = "*/", run = "folder" },
+    { url = "/run/user/1000/gvfs/**/*", run = "noop" },
+    { url = "/run/media/USER_NAME/**/*", run = "noop" },
+    { url = "*.csv", run = "duckdb" },  
+    { url = "*.tsv", run = "duckdb" },  
+    { url = "*.json", run = "duckdb" },  
+    { url = "*.parquet", run = "duckdb" },  
+    { url = "*.xlsx", run = "duckdb" },  
+    { url = "*.db", run = "duckdb" },
+    { url = "*.duckdb", run = "duckdb" }
+  ]
+[tasks]
+  image_alloc      = 1073741824        # = 1024*1024*1024 = 1024MB
+

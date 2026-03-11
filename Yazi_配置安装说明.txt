@@ -1,0 +1,241 @@
+================================================================================
+                    Yazi 配置文件 - 安装说明
+================================================================================
+
+【一、系统依赖】
+================================================================================
+
+以下是需要安装的系统命令/工具：
+
+--------------------------------------------------------------------------------
+Ubuntu / Debian 系：
+--------------------------------------------------------------------------------
+sudo apt update
+sudo apt install -y yazi fzf zoxide ripgrep mediainfo
+
+# duckdb（Ubuntu 没有官方包，需要手动安装）
+wget https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip
+unzip duckdb_cli-linux-amd64.zip
+sudo mv duckdb /usr/local/bin/
+rm duckdb_cli-linux-amd64.zip
+
+# ouch（压缩工具，Ubuntu 没有官方包）
+# 方法1：使用 cargo 安装（需要先安装 Rust）
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+cargo install ouch
+
+# 方法2：下载预编译二进制
+wget https://github.com/ouch-org/ouch/releases/download/0.5.1/ouch-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf ouch-x86_64-unknown-linux-gnu.tar.gz
+sudo mv ouch /usr/local/bin/
+rm ouch-x86_64-unknown-linux-gnu.tar.gz
+
+--------------------------------------------------------------------------------
+Fedora / RHEL / CentOS 系：
+--------------------------------------------------------------------------------
+sudo dnf install -y yazi fzf zoxide ripgrep mediainfo
+
+# duckdb
+sudo dnf install -y duckdb
+
+# 或手动安装最新版：
+wget https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip
+unzip duckdb_cli-linux-amd64.zip
+sudo mv duckdb /usr/local/bin/
+
+# ouch
+cargo install ouch
+# 或下载预编译版本
+
+--------------------------------------------------------------------------------
+Arch Linux / Manjaro 系：
+--------------------------------------------------------------------------------
+sudo pacman -S yazi fzf zoxide ripgrep mediainfo duckdb
+
+# ouch
+yay -S ouch
+# 或
+cargo install ouch
+
+--------------------------------------------------------------------------------
+openSUSE 系：
+--------------------------------------------------------------------------------
+sudo zypper install yazi fzf zoxide ripgrep mediainfo
+
+# duckdb 和 ouch 需要手动安装（同上）
+
+--------------------------------------------------------------------------------
+通用安装方法（所有发行版）：
+--------------------------------------------------------------------------------
+
+# fzf（模糊搜索）
+git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+~/.fzf/install
+
+# zoxide（智能目录跳转）
+curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+
+# ripgrep（内容搜索）
+# 从 GitHub Releases 下载：https://github.com/BurntSushi/ripgrep/releases
+
+# mediainfo（媒体信息）
+# 大多数发行版都有 mediainfo 包
+
+# duckdb
+# 从 GitHub Releases 下载：https://github.com/duckdb/duckdb/releases
+
+# ouch
+# 从 GitHub Releases 下载：https://github.com/ouch-org/ouch/releases
+
+
+【二、配置文件安装】
+================================================================================
+
+1. 备份现有配置（如果有）：
+   mv ~/.config/yazi ~/.config/yazi.backup
+
+2. 克隆配置文件：
+   git clone https://github.com/你的用户名/你的仓库.git ~/.config/yazi
+
+   或手动复制：
+   mkdir -p ~/.config/yazi
+   cp -r yazi/* ~/.config/yazi/
+
+
+【三、主题安装】
+================================================================================
+
+本配置不包含主题，请自行安装喜欢的主题：
+
+# 查看可用主题
+ya pkg search flavor
+
+# 安装 Catppuccin 主题
+ya pkg add yazi-rs/flavors:catppuccin-mocha
+
+# 安装 Dracula 主题
+ya pkg add yazi-rs/flavors:dracula
+
+# 安装 Tokyo Night 主题
+ya pkg add yazi-rs/flavors:tokyo-night
+
+# 安装后修改 theme.toml
+# [flavor]
+# dark = "catppuccin-mocha"
+
+
+【四、插件安装】
+================================================================================
+
+Yazi 插件通过内置包管理器安装：
+
+# 进入 yazi 配置目录
+cd ~/.config/yazi
+
+# 安装所有声明的插件
+ya pkg install
+
+# 或手动安装单个插件：
+ya pkg add yazi-rs/plugins:full-border
+ya pkg add yazi-rs/plugins:starship
+ya pkg add yazi-rs/plugins:simple-status
+ya pkg add boydaihungst/gvfs.yazi
+ya pkg add boydaihungst/recycle-bin.yazi
+ya pkg add wylie102/duckdb.yazi
+ya pkg add wylie102/mediainfo.yazi
+ya pkg add boydaihungst/mount.yazi
+ya pkg add ouch-fork/ouch.yazi
+ya pkg add wylie102/bypass.yazi
+ya pkg add AnirudhG07/plugins-yazi:augment-command
+ya pkg add yazi-rs/plugins:smart-enter
+ya pkg add yazi-rs/plugins:open-with-cmd
+
+--------------------------------------------------------------------------------
+手动安装的插件（不通过 ya pkg）：
+--------------------------------------------------------------------------------
+
+# whoosh（书签管理）
+git clone https://gitlab.com/WhoSowSee/whoosh.yazi.git ~/.config/yazi/plugins/whoosh.yazi
+
+
+【四、依赖清单】
+================================================================================
+
+| 依赖/插件          | 用途                          | 必需 |
+|-------------------|------------------------------|------|
+| yazi              | 文件管理器本体                 | ✅   |
+| fzf               | 模糊搜索                       | ✅   |
+| zoxide            | 智能目录跳转                    | ✅   |
+| ripgrep (rg)      | 内容搜索                       | ✅   |
+| mediainfo         | 媒体文件预览                    | ✅   |
+| duckdb            | JSON/CSV/Excel 预览            | ✅   |
+| ouch              | 压缩文件操作                    | ⚪   |
+| full-border       | 边框美化插件                    | ✅   |
+| starship          | 状态栏美化                      | ✅   |
+| simple-status     | 简洁状态栏                      | ✅   |
+| gvfs              | 设备挂载                        | ⚪   |
+| recycle-bin       | 回收站功能                      | ✅   |
+| duckdb.yazi       | 数据文件预览                    | ✅   |
+| mediainfo.yazi    | 媒体信息预览                    | ✅   |
+| mount             | 挂载设备                        | ⚪   |
+| bypass            | 智能进入目录                    | ✅   |
+| augment-command   | 增强命令                        | ✅   |
+| smart-enter       | 智能进入                        | ✅   |
+| open-with-cmd     | 自定义命令打开                   | ⚪   |
+| whoosh            | 书签管理                        | ✅   |
+
+✅ = 必需  ⚪ = 可选
+
+
+【五、验证安装】
+================================================================================
+
+安装完成后，运行以下命令验证：
+
+# 检查系统依赖
+which yazi fzf zoxide rg mediainfo duckdb
+
+# 检查 yazi 版本
+yazi --version
+
+# 启动 yazi
+yazi
+
+# 在 yazi 中按 ~ 查看日志，确认插件加载成功
+
+
+【六、常见问题】
+================================================================================
+
+Q: 提示找不到 ya 命令？
+A: ya 是 yazi 的包管理器，确保 yazi 版本 >= 0.4
+
+Q: 插件加载失败？
+A: 检查 init.lua 中的 require() 是否正确，查看 ~/.config/yazi/init.lua
+
+Q: duckdb 预览不工作？
+A: 确保 duckdb 已安装且在 PATH 中，运行 `which duckdb` 检查
+
+Q: 中文显示乱码？
+A: 确保系统安装了中文字体，终端支持 UTF-8
+
+Q: 图片预览不工作？
+A: 确保终端支持图形协议（如 kitty、wezterm、iterm2 等）
+
+
+【七、推荐终端】
+================================================================================
+
+为获得最佳体验，推荐使用以下终端：
+
+- Kitty（支持图片预览）
+- WezTerm（支持图片预览）
+- Alacritty（高性能）
+- GNOME Terminal（Fedora 默认）
+
+
+================================================================================
+文档更新时间：2026年3月11日
+GitHub 仓库：https://github.com/linxuan-sys/yazi
+================================================================================
