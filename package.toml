@@ -1,0 +1,74 @@
+[[plugin.deps]]
+use = "boydaihungst/mediainfo"
+rev = "ae2a1f1"
+hash = "b2afd25ad3ac851adf2a1b706d1a2add"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:full-border"
+rev = "e07bf41"
+hash = "3996fc74044bc44144b323686f887e1"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:mount"
+rev = "e07bf41"
+hash = "563e4068979d1466d3dfc2e70a296947"
+
+[[plugin.deps]]
+use = "Rolv-Apneseth/starship"
+rev = "eca1861"
+hash = "e519d894e94ded741e06aae4d4775981"
+
+[[plugin.deps]]
+use = "Ape/simple-status"
+rev = "d0da104"
+hash = "68603fdd1dcaf415227e2c77a9317947"
+
+[[plugin.deps]]
+use = "Ape/open-with-cmd"
+rev = "e3d430f"
+hash = "d29c1ffa99099181faf8c01d1f59aa4c"
+
+[[plugin.deps]]
+use = "boydaihungst/gvfs"
+rev = "30440c7"
+hash = "211b7d22478b907e5f6fd4fe27a923e"
+
+[[plugin.deps]]
+use = "ndtoan96/ouch"
+rev = "594b8a2"
+hash = "c9e628fc0312d198db22ae2fa74883b"
+
+[[plugin.deps]]
+use = "wylie102/duckdb"
+rev = "3f8c863"
+hash = "87b9233a74325e95011670ed20bbd0d4"
+
+[[plugin.deps]]
+use = "Rolv-Apneseth/bypass"
+rev = "c1e5fcf"
+hash = "208e77480824f62558a5b037c8569d61"
+
+[[plugin.deps]]
+use = "hankertrix/augment-command"
+rev = "7c12bdf"
+hash = "f7e6d377e4efee567ec6d1c2355f2ca3"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-enter"
+rev = "e07bf41"
+hash = "56fdabc96fc1f4d53c96eb884b02a5be"
+
+[[plugin.deps]]
+use = "uhs-robert/recycle-bin"
+rev = "fa68711"
+hash = "8714306b5cac6359edbacbf545fbd691"
+
+[[flavor.deps]]
+use = "yazi-rs/flavors:dracula"
+rev = "ca61658"
+hash = "8589ae0231756a9daf9c072f31b1fe0"
+
+[[flavor.deps]]
+use = "yazi-rs/flavors:catppuccin-mocha"
+rev = "ca61658"
+hash = "8eabb4e88096f10905a6df62cfaadbf4"
