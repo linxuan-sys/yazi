@@ -9,6 +9,15 @@ local DEFAULT_SPECIAL_KEYS = {
   previous_dir = "<Backspace>",
 }
 
+local function notify(content, level, timeout)
+  ya.notify { title = "Bookmarks", content = content, timeout = timeout or 1, level = level or "info" }
+end
+
+local function default(value, fallback)
+  if value == nil then return fallback end
+  return value
+end
+
 local function get_fzf_delimiter()
   if ya.target_family() == "windows" then
     return "--delimiter=\\t"
@@ -71,10 +80,6 @@ end)
 
 local get_current_tab_idx = ya.sync(function(state)
   return cx.tabs.idx
-end)
-
-local get_directory_history = ya.sync(function(state)
-  return state.directory_history
 end)
 
 local add_to_history = ya.sync(function(state, tab_idx, path)
@@ -185,9 +190,9 @@ local function apply_home_alias(path)
   return path
 end
 
-local function normalize_special_key(value, default)
+local function normalize_special_key(value, fallback)
   if value == nil then
-    return default
+    return fallback
   end
   if value == false then
     return nil
@@ -214,7 +219,7 @@ local function normalize_special_key(value, default)
     end
     return seq
   end
-  return default
+  return fallback
 end
 
 local function truncate_long_folder_names(path, max_folder_length)
@@ -323,16 +328,14 @@ local function truncate_path(path, max_parts)
 end
 
 local function path_to_desc(path)
-  local path_truncate_enabled = get_state_attr("path_truncate_enabled")
   local result_path = apply_home_alias(normalize_path(path))
 
-  local path_truncate_long_names_enabled = get_state_attr("path_truncate_long_names_enabled")
-  if path_truncate_long_names_enabled == true then
+  if get_state_attr("path_truncate_long_names_enabled") == true then
     local max_folder_length = get_state_attr("path_max_folder_name_length") or 20
     result_path = truncate_long_folder_names(result_path, max_folder_length)
   end
 
-  if path_truncate_enabled == true then
+  if get_state_attr("path_truncate_enabled") == true then
     local max_depth = get_state_attr("path_max_depth") or 3
     result_path = truncate_path(result_path, max_depth)
   end
@@ -344,64 +347,15 @@ local function get_display_width(str)
   return ui.Line(str):width()
 end
 
-local function truncate_long_folder_names(path, max_folder_length)
-  if not max_folder_length or max_folder_length <= 0 then
-    return path
-  end
-
-  local separator = ya.target_family() == "windows" and "\\" or "/"
-  local parts = {}
-  local is_windows = ya.target_family() == "windows"
-
-  if is_windows then
-    local drive, rest = path:match("^([A-Za-z]:\\)(.*)$")
-    if drive then
-      table.insert(parts, drive:sub(1, -2))
-      if rest and rest ~= "" then
-        for part in rest:gmatch("[^\\]+") do
-          if #part > max_folder_length then
-            local keep_length = math.max(3, math.floor(max_folder_length * 0.4))
-            local truncated = part:sub(1, keep_length) .. "..."
-            table.insert(parts, truncated)
-          else
-            table.insert(parts, part)
-          end
-        end
-      end
-      return table.concat(parts, separator)
-    end
-  end
-
-  for part in path:gmatch("[^" .. (separator == "\\" and "\\\\" or separator) .. "]+") do
-    if #part > max_folder_length then
-      local keep_length = math.max(3, math.floor(max_folder_length * 0.4))
-      local truncated = part:sub(1, keep_length) .. "..."
-      table.insert(parts, truncated)
-    else
-      table.insert(parts, part)
-    end
-  end
-
-  local result = table.concat(parts, separator)
-
-  if path:sub(1, 1) == separator then
-    result = separator .. result
-  end
-
-  return result
-end
-
 local function path_to_desc_for_fzf(path)
-  local fzf_path_truncate_enabled = get_state_attr("fzf_path_truncate_enabled")
   local result_path = apply_home_alias(normalize_path(path))
 
-  local fzf_path_truncate_long_names_enabled = get_state_attr("fzf_path_truncate_long_names_enabled")
-  if fzf_path_truncate_long_names_enabled == true then
+  if get_state_attr("fzf_path_truncate_long_names_enabled") == true then
     local max_folder_length = get_state_attr("fzf_path_max_folder_name_length") or 20
     result_path = truncate_long_folder_names(result_path, max_folder_length)
   end
 
-  if fzf_path_truncate_enabled == true then
+  if get_state_attr("fzf_path_truncate_enabled") == true then
     local max_depth = get_state_attr("fzf_path_max_depth") or 5
     result_path = truncate_path(result_path, max_depth)
   end
@@ -410,25 +364,19 @@ local function path_to_desc_for_fzf(path)
 end
 
 local function path_to_desc_for_history(path)
-  local history_fzf_path_truncate_enabled = get_state_attr("history_fzf_path_truncate_enabled")
   local result_path = apply_home_alias(normalize_path(path))
 
-  local history_fzf_path_truncate_long_names_enabled = get_state_attr("history_fzf_path_truncate_long_names_enabled")
-  if history_fzf_path_truncate_long_names_enabled == true then
+  if get_state_attr("history_fzf_path_truncate_long_names_enabled") == true then
     local max_folder_length = get_state_attr("history_fzf_path_max_folder_name_length") or 30
     result_path = truncate_long_folder_names(result_path, max_folder_length)
   end
 
-  if history_fzf_path_truncate_enabled == true then
+  if get_state_attr("history_fzf_path_truncate_enabled") == true then
     local max_depth = get_state_attr("history_fzf_path_max_depth") or 5
     result_path = truncate_path(result_path, max_depth)
   end
 
   return result_path
-end
-
-local function format_bookmark_for_menu(tag, key)
-  return tag
 end
 
 local function format_bookmark_for_fzf(tag, path, key, max_tag_width, max_path_width)
@@ -499,7 +447,9 @@ local function sort_bookmarks(bookmarks, key1, key2, reverse)
   return bookmarks
 end
 
-local action_save, action_jump, action_delete, which_find, fzf_find, fzf_find_for_rename, fzf_history
+local action_save, action_jump, action_delete, action_delete_multi
+local which_find, which_find_deletable
+local fzf_find, fzf_find_for_rename, fzf_find_multi, fzf_history
 
 local function get_all_bookmarks()
   local all_b = {}
@@ -537,13 +487,13 @@ local function deserialize_key_from_file(key_str)
 
   if key_str:find(",") then
     local seq = {}
-    for token in key_str:gmatch("[^,%s]+") do
-      local trimmed = token:gsub("^%s*(.-)%s*$", "%1")
-      if trimmed ~= "" then
-        if trimmed:match("^<.->$") then
-          table.insert(seq, trimmed)
+    for raw_token in key_str:gmatch("[^,%s]+") do
+      local token = raw_token:gsub("^%s*(.-)%s*$", "%1")
+      if token ~= "" then
+        if token:match("^<.->$") then
+          table.insert(seq, token)
         else
-          for _, cp in utf8.codes(trimmed) do
+          for _, cp in utf8.codes(token) do
             table.insert(seq, utf8.char(cp))
           end
         end
@@ -571,7 +521,7 @@ local save_to_file = function(mb_path, bookmarks)
   ensure_directory(mb_path)
   local file = io.open(mb_path, "w")
   if file == nil then
-    ya.notify { title = "Bookmarks Error", content = "Cannot create bookmark file: " .. mb_path, timeout = 2, level = "error" }
+    notify("Cannot create bookmark file: " .. mb_path, "error", 2)
     return
   end
   local array = {}
@@ -586,251 +536,104 @@ local save_to_file = function(mb_path, bookmarks)
   file:close()
 end
 
-fzf_find = function()
-  local mb_path = get_state_attr("path")
+-- Unified fzf bookmark picker. opts:
+--   source:    "all" (config + user) or "user" (user only). Default: "all".
+--   multi:     boolean — allow multi-selection (TAB).
+--   prompt:    fzf prompt label (e.g. "Search > ").
+--   empty_msg: text shown via `echo ... | fzf` when there are no items.
+-- Returns: array of selected paths (length 0 if cancelled or no items).
+local function run_fzf_picker(opts)
+  local source = opts.source or "all"
+  local prompt = opts.prompt or "Search > "
+  local empty_msg = opts.empty_msg or "No bookmarks found"
+
   local temp_bookmarks = get_temp_bookmarks()
+  local perm_bookmarks = source == "user" and get_state_attr("bookmarks") or get_all_bookmarks()
 
   local permit = ui.hide()
-  local temp_file_path = nil
+  local temp_file_path = os.tmpname()
+  local temp_file = io.open(temp_file_path, "w")
   local cmd
 
-  local all_perm_bookmarks = get_all_bookmarks()
-
-  temp_file_path = os.tmpname()
-  local temp_file = io.open(temp_file_path, "w")
   if temp_file then
-    local all_fzf_items = {}
-    local max_tag_width = 0
-    local max_path_width = 0
+    local items = {}
+    local max_tag_w, max_path_w = 0, 0
+
+    local function add_section(bookmarks, prefix, require_full)
+      local arr = {}
+      for _, item in pairs(bookmarks or {}) do
+        if require_full then
+          if item and item.tag and item.path and item.key then table.insert(arr, item) end
+        else
+          table.insert(arr, item)
+        end
+      end
+      sort_bookmarks(arr, "tag", "key", true)
+      for _, item in ipairs(arr) do
+        local tag = prefix .. item.tag
+        local display_path = path_to_desc_for_fzf(item.path)
+        table.insert(items, { tag = tag, path = item.path, key = item.key or "" })
+        max_tag_w = math.max(max_tag_w, get_display_width(tag))
+        max_path_w = math.max(max_path_w, get_display_width(display_path))
+      end
+    end
 
     if temp_bookmarks and next(temp_bookmarks) then
-      local temp_array = {}
-      for _, item in pairs(temp_bookmarks) do
-        if item and item.tag and item.path and item.key then table.insert(temp_array, item) end
-      end
-      sort_bookmarks(temp_array, "tag", "key", true)
-      for _, item in ipairs(temp_array) do
-        local tag_with_prefix = "[TEMP] " .. item.tag
-        local display_path = path_to_desc_for_fzf(item.path)
-        table.insert(all_fzf_items, { tag = tag_with_prefix, path = item.path, key = item.key or "" })
-        max_tag_width = math.max(max_tag_width, get_display_width(tag_with_prefix))
-        max_path_width = math.max(max_path_width, get_display_width(display_path))
-      end
+      add_section(temp_bookmarks, "[TEMP] ", true)
+    end
+    if perm_bookmarks and next(perm_bookmarks) then
+      add_section(perm_bookmarks, "", false)
     end
 
-    if all_perm_bookmarks and next(all_perm_bookmarks) then
-      local perm_array = {}
-      for _, item in pairs(all_perm_bookmarks) do
-        table.insert(perm_array, item)
-      end
-      sort_bookmarks(perm_array, "tag", "key", true)
-      for _, item in ipairs(perm_array) do
-        local display_path = path_to_desc_for_fzf(item.path)
-        table.insert(all_fzf_items, { tag = item.tag, path = item.path, key = item.key or "" })
-        max_tag_width = math.max(max_tag_width, get_display_width(item.tag))
-        max_path_width = math.max(max_path_width, get_display_width(display_path))
-      end
-    end
-
-    if #all_fzf_items > 0 then
-      for _, item in ipairs(all_fzf_items) do
-        local formatted_line = format_bookmark_for_fzf(item.tag, item.path, item.key, max_tag_width, max_path_width)
+    if #items > 0 then
+      for _, item in ipairs(items) do
+        local formatted_line = format_bookmark_for_fzf(item.tag, item.path, item.key, max_tag_w, max_path_w)
         temp_file:write(formatted_line .. "\t" .. item.path .. "\n")
       end
       temp_file:close()
-      cmd = string.format("fzf %s --with-nth=1 --prompt=\"Search > \" < \"%s\"", get_fzf_delimiter(), temp_file_path)
+      cmd = string.format("fzf %s%s --with-nth=1 --prompt=\"%s\" < \"%s\"",
+        opts.multi and "--multi " or "", get_fzf_delimiter(), prompt, temp_file_path)
     else
       temp_file:close()
-      cmd = "echo No bookmarks found | fzf --prompt=\"Search > \""
+      cmd = string.format("echo %s | fzf --prompt=\"%s\"", empty_msg, prompt)
     end
   else
-    cmd = "echo No bookmarks found | fzf --prompt=\"Search > \""
+    cmd = string.format("echo %s | fzf --prompt=\"%s\"", empty_msg, prompt)
   end
 
-
   local handle = io.popen(cmd, "r")
-  local result = ""
+  local raw = ""
   if handle then
-    result = string.gsub(handle:read("*all") or "", "^%s*(.-)%s*$", "%1")
+    raw = handle:read("*all") or ""
     handle:close()
   end
 
   if temp_file_path then os.remove(temp_file_path) end
   permit:drop()
 
-  if result and result ~= "" and result ~= "No bookmarks found" then
-    local tab_pos = result:find("\t")
-    if tab_pos then
-      return result:sub(tab_pos + 1)
+  local paths = {}
+  for raw_line in raw:gmatch("[^\r\n]+") do
+    local line = string.gsub(raw_line, "^%s*(.-)%s*$", "%1")
+    if line ~= "" and line ~= empty_msg then
+      local tab_pos = line:find("\t")
+      if tab_pos then
+        table.insert(paths, line:sub(tab_pos + 1))
+      end
     end
   end
-  return nil
+  return paths
+end
+
+fzf_find = function()
+  return run_fzf_picker({ source = "all", prompt = "Search > ", empty_msg = "No bookmarks found" })[1]
 end
 
 fzf_find_for_rename = function()
-  local mb_path = get_state_attr("path")
-  local temp_bookmarks = get_temp_bookmarks()
-
-  local permit = ui.hide()
-  local temp_file_path = nil
-  local cmd
-
-  local all_perm_bookmarks = get_all_bookmarks()
-
-  temp_file_path = os.tmpname()
-  local temp_file = io.open(temp_file_path, "w")
-  if temp_file then
-    local all_fzf_items = {}
-    local max_tag_width = 0
-    local max_path_width = 0
-
-    if temp_bookmarks and next(temp_bookmarks) then
-      local temp_array = {}
-      for _, item in pairs(temp_bookmarks) do
-        if item and item.tag and item.path and item.key then table.insert(temp_array, item) end
-      end
-      sort_bookmarks(temp_array, "tag", "key", true)
-      for _, item in ipairs(temp_array) do
-        local tag_with_prefix = "[TEMP] " .. item.tag
-        local display_path = path_to_desc_for_fzf(item.path)
-        table.insert(all_fzf_items, { tag = tag_with_prefix, path = item.path, key = item.key or "" })
-        max_tag_width = math.max(max_tag_width, get_display_width(tag_with_prefix))
-        max_path_width = math.max(max_path_width, get_display_width(display_path))
-      end
-    end
-
-    if all_perm_bookmarks and next(all_perm_bookmarks) then
-      local perm_array = {}
-      for _, item in pairs(all_perm_bookmarks) do
-        table.insert(perm_array, item)
-      end
-      sort_bookmarks(perm_array, "tag", "key", true)
-      for _, item in ipairs(perm_array) do
-        local display_path = path_to_desc_for_fzf(item.path)
-        table.insert(all_fzf_items, { tag = item.tag, path = item.path, key = item.key or "" })
-        max_tag_width = math.max(max_tag_width, get_display_width(item.tag))
-        max_path_width = math.max(max_path_width, get_display_width(display_path))
-      end
-    end
-
-    if #all_fzf_items > 0 then
-      for _, item in ipairs(all_fzf_items) do
-        local formatted_line = format_bookmark_for_fzf(item.tag, item.path, item.key, max_tag_width, max_path_width)
-        temp_file:write(formatted_line .. "\t" .. item.path .. "\n")
-      end
-      temp_file:close()
-      cmd = string.format("fzf %s --with-nth=1 --prompt=\"Rename > \" < \"%s\"", get_fzf_delimiter(), temp_file_path)
-    else
-      temp_file:close()
-      cmd = "echo No bookmarks found | fzf --prompt=\"Rename > \""
-    end
-  else
-    cmd = "echo No bookmarks found | fzf --prompt=\"Rename > \""
-  end
-
-  local handle = io.popen(cmd, "r")
-  local result = ""
-  if handle then
-    result = string.gsub(handle:read("*all") or "", "^%s*(.-)%s*$", "%1")
-    handle:close()
-  end
-
-  if temp_file_path then os.remove(temp_file_path) end
-  permit:drop()
-
-  if result and result ~= "" and result ~= "No bookmarks found" then
-    local tab_pos = result:find("\t")
-    if tab_pos then
-      return result:sub(tab_pos + 1)
-    end
-  end
-  return nil
+  return run_fzf_picker({ source = "all", prompt = "Rename > ", empty_msg = "No bookmarks found" })[1]
 end
 
 fzf_find_multi = function()
-  local temp_bookmarks = get_temp_bookmarks()
-  local user_bookmarks = get_state_attr("bookmarks")
-
-  local permit = ui.hide()
-  local temp_file_path = nil
-  local cmd
-
-  temp_file_path = os.tmpname()
-  local temp_file = io.open(temp_file_path, "w")
-  if temp_file then
-    local all_fzf_items = {}
-    local max_tag_width = 0
-    local max_path_width = 0
-
-    if temp_bookmarks and next(temp_bookmarks) then
-      local temp_array = {}
-      for _, item in pairs(temp_bookmarks) do
-        if item and item.tag and item.path and item.key then table.insert(temp_array, item) end
-      end
-      sort_bookmarks(temp_array, "tag", "key", true)
-      for _, item in ipairs(temp_array) do
-        local tag_with_prefix = "[TEMP] " .. item.tag
-        local display_path = path_to_desc_for_fzf(item.path)
-        table.insert(all_fzf_items, { tag = tag_with_prefix, path = item.path, key = item.key or "" })
-        max_tag_width = math.max(max_tag_width, get_display_width(tag_with_prefix))
-        max_path_width = math.max(max_path_width, get_display_width(display_path))
-      end
-    end
-
-    if user_bookmarks and next(user_bookmarks) then
-      local user_array = {}
-      for _, item in pairs(user_bookmarks) do
-        table.insert(user_array, item)
-      end
-      sort_bookmarks(user_array, "tag", "key", true)
-      for _, item in ipairs(user_array) do
-        local display_path = path_to_desc_for_fzf(item.path)
-        table.insert(all_fzf_items, { tag = item.tag, path = item.path, key = item.key or "" })
-        max_tag_width = math.max(max_tag_width, get_display_width(item.tag))
-        max_path_width = math.max(max_path_width, get_display_width(display_path))
-      end
-    end
-
-    if #all_fzf_items > 0 then
-      for _, item in ipairs(all_fzf_items) do
-        local formatted_line = format_bookmark_for_fzf(item.tag, item.path, item.key, max_tag_width, max_path_width)
-        temp_file:write(formatted_line .. "\t" .. item.path .. "\n")
-      end
-      temp_file:close()
-      cmd = string.format("fzf --multi %s --with-nth=1 --prompt=\"Delete > \" < \"%s\"",
-        get_fzf_delimiter(), temp_file_path)
-    else
-      temp_file:close()
-      cmd = "echo No deletable bookmarks found | fzf --prompt=\"Delete > \""
-    end
-  else
-    cmd = "echo No deletable bookmarks found | fzf --prompt=\"Delete > \""
-  end
-
-  local handle = io.popen(cmd, "r")
-  local result = ""
-  if handle then
-    result = handle:read("*all") or ""
-    handle:close()
-  end
-
-  if temp_file_path then os.remove(temp_file_path) end
-  permit:drop()
-
-  if result and result ~= "" and result ~= "No deletable bookmarks found" then
-    local paths = {}
-    for line in result:gmatch("[^\r\n]+") do
-      local trimmed = string.gsub(line, "^%s*(.-)%s*$", "%1")
-      if trimmed ~= "" then
-        local tab_pos = trimmed:find("\t")
-        if tab_pos then
-          table.insert(paths, trimmed:sub(tab_pos + 1))
-        end
-      end
-    end
-    return paths
-  end
-  return {}
+  return run_fzf_picker({ source = "user", multi = true, prompt = "Delete > ", empty_msg = "No deletable bookmarks found" })
 end
 
 fzf_history = function()
@@ -929,107 +732,61 @@ local create_special_menu_items = function()
   return special_items
 end
 
-which_find = function()
-  local bookmarks = get_all_bookmarks()
+-- Unified `ya.which`-based bookmark picker. opts:
+--   source:          "all" (config + user) or "user" (user only).
+--   include_special: prepend create_special_menu_items() candidates.
+--   empty_msg:       notification text shown when there are no key-bound bookmarks.
+-- Returns: selected path or nil.
+local function pick_bookmark(opts)
+  local perm_bookmarks = opts.source == "user" and get_state_attr("bookmarks") or get_all_bookmarks()
   local temp_bookmarks = get_temp_bookmarks()
 
-  local cands_static = create_special_menu_items()
-  local cands_bookmarks = {}
-
-  local all_bookmark_items = {}
-  local max_tag_width = 0
-  local max_path_width = 0
-
-  if temp_bookmarks then
-    for path, item in pairs(temp_bookmarks) do
+  local items = {}
+  local function collect(bookmarks, prefix)
+    for path, item in pairs(bookmarks or {}) do
       if item and item.tag and #item.tag ~= 0 then
-        local tag_with_prefix = "[TEMP] " .. item.tag
-        local display_path = path_to_desc(item.path or path)
-        table.insert(all_bookmark_items,
-          { tag = tag_with_prefix, path = item.path or path, key = item.key or "", is_temp = true })
-        max_tag_width = math.max(max_tag_width, get_display_width(tag_with_prefix))
-        max_path_width = math.max(max_path_width, get_display_width(display_path))
+        table.insert(items, {
+          tag = prefix .. item.tag,
+          path = item.path or path,
+          key = item.key or "",
+        })
       end
     end
   end
+  collect(temp_bookmarks, "[TEMP] ")
+  collect(perm_bookmarks, "")
 
-  for path, item in pairs(bookmarks) do
-    if item and item.tag and #item.tag ~= 0 then
-      local display_path = path_to_desc(item.path or path)
-      table.insert(all_bookmark_items,
-        { tag = item.tag, path = item.path or path, key = item.key or "", is_temp = false })
-      max_tag_width = math.max(max_tag_width, get_display_width(item.tag))
-      max_path_width = math.max(max_path_width, get_display_width(display_path))
-    end
-  end
-
-  for _, item in ipairs(all_bookmark_items) do
+  local cands_bookmarks = {}
+  for _, item in ipairs(items) do
     if item.key and item.key ~= "" and
         (type(item.key) == "string" or (type(item.key) == "table" and #item.key > 0)) then
-      local formatted_desc = format_bookmark_for_menu(item.tag, item.key)
-      table.insert(cands_bookmarks, { desc = formatted_desc, on = item.key, path = item.path })
+      table.insert(cands_bookmarks, { desc = item.tag, on = item.key, path = item.path })
     end
   end
 
   sort_bookmarks(cands_bookmarks, "on", "desc", false)
 
+  local cands_static = opts.include_special and create_special_menu_items() or {}
   local cands = {}
   for _, item in ipairs(cands_static) do table.insert(cands, item) end
   for _, item in ipairs(cands_bookmarks) do table.insert(cands, item) end
 
-  if #cands == #cands_static and #cands_bookmarks == 0 then
-    ya.notify { title = "Bookmarks", content = "No bookmarks found", timeout = 1, level = "info" }
+  if #cands_bookmarks == 0 then
+    notify(opts.empty_msg)
   end
+  if #cands == 0 then return nil end
+
   local idx = ya.which { cands = cands }
   if idx == nil then return nil end
   return cands[idx].path
 end
 
+which_find = function()
+  return pick_bookmark({ source = "all", include_special = true, empty_msg = "No bookmarks found" })
+end
+
 which_find_deletable = function()
-  local user_bookmarks = get_state_attr("bookmarks")
-  local temp_bookmarks = get_temp_bookmarks()
-
-  local cands_bookmarks = {}
-
-  local all_bookmark_items = {}
-
-  if temp_bookmarks then
-    for path, item in pairs(temp_bookmarks) do
-      if item and item.tag and #item.tag ~= 0 then
-        local tag_with_prefix = "[TEMP] " .. item.tag
-        table.insert(all_bookmark_items,
-          { tag = tag_with_prefix, path = item.path or path, key = item.key or "", is_temp = true })
-      end
-    end
-  end
-
-  if user_bookmarks then
-    for path, item in pairs(user_bookmarks) do
-      if item and item.tag and #item.tag ~= 0 then
-        table.insert(all_bookmark_items,
-          { tag = item.tag, path = item.path or path, key = item.key or "", is_temp = false })
-      end
-    end
-  end
-
-  for _, item in ipairs(all_bookmark_items) do
-    if item.key and item.key ~= "" and
-        (type(item.key) == "string" or (type(item.key) == "table" and #item.key > 0)) then
-      local formatted_desc = format_bookmark_for_menu(item.tag, item.key)
-      table.insert(cands_bookmarks, { desc = formatted_desc, on = item.key, path = item.path })
-    end
-  end
-
-  sort_bookmarks(cands_bookmarks, "on", "desc", false)
-
-  if #cands_bookmarks == 0 then
-    ya.notify { title = "Bookmarks", content = "No deletable bookmarks found", timeout = 1, level = "info" }
-    return nil
-  end
-
-  local idx = ya.which { cands = cands_bookmarks }
-  if idx == nil then return nil end
-  return cands_bookmarks[idx].path
+  return pick_bookmark({ source = "user", include_special = false, empty_msg = "No deletable bookmarks found" })
 end
 
 action_jump = function(path)
@@ -1055,7 +812,7 @@ action_jump = function(path)
   local bookmark = temp_bookmarks[path] or all_bookmarks[path]
   if not bookmark then
     ya.emit("cd", { path })
-    if jump_notify then ya.notify { title = "Bookmarks", content = 'Jump to "' .. path_to_desc(path) .. '"', timeout = 1, level = "info" } end
+    if jump_notify then notify('Jump to "' .. path_to_desc(path) .. '"') end
     return
   end
 
@@ -1066,20 +823,20 @@ action_jump = function(path)
 
   if jump_notify then
     local prefix = is_temp and "[TEMP] " or ""
-    ya.notify { title = "Bookmarks", content = 'Jump to "' .. prefix .. tag .. '"', timeout = 1, level = "info" }
+    notify('Jump to "' .. prefix .. tag .. '"')
   end
 end
 
 local function parse_keys_input(input)
   if not input or input == "" then return {} end
   local seq = {}
-  for token in input:gmatch("[^,%s]+") do
-    local trimmed = token:gsub("^%s*(.-)%s*$", "%1")
-    if trimmed ~= "" then
-      if trimmed:match("^<.->$") then
-        table.insert(seq, trimmed)
+  for raw_token in input:gmatch("[^,%s]+") do
+    local token = raw_token:gsub("^%s*(.-)%s*$", "%1")
+    if token ~= "" then
+      if token:match("^<.->$") then
+        table.insert(seq, token)
       else
-        for _, cp in utf8.codes(trimmed) do
+        for _, cp in utf8.codes(token) do
           table.insert(seq, utf8.char(cp))
         end
       end
@@ -1170,19 +927,19 @@ end
 local function jump_by_key_spec(spec)
   local cleaned = (spec or ""):gsub("^%s*(.-)%s*$", "%1")
   if cleaned == "" then
-    ya.notify { title = "Bookmarks", content = "Missing key sequence", timeout = 1, level = "warn" }
+    notify("Missing key sequence", "warn")
     return false
   end
 
   local seq = parse_keys_input(cleaned)
   if #seq == 0 then
-    ya.notify { title = "Bookmarks", content = "Missing key sequence", timeout = 1, level = "warn" }
+    notify("Missing key sequence", "warn")
     return false
   end
 
   local path = find_path_by_key_sequence(seq)
   if not path then
-    ya.notify { title = "Bookmarks", content = "Bookmark not found for key: " .. _seq_to_string(seq), timeout = 1, level = "info" }
+    notify("Bookmark not found for key: " .. _seq_to_string(seq))
     return false
   end
 
@@ -1256,7 +1013,7 @@ action_save = function(path, is_temp)
     if event ~= 1 then return end
     tag = value or ''
     if #tag == 0 then
-      ya.notify { title = "Bookmarks", content = "Empty tag", timeout = 1, level = "info" }
+      notify("Empty tag")
     else
       local tag_obj = nil
       for _, item in pairs(all_bookmarks) do
@@ -1272,7 +1029,7 @@ action_save = function(path, is_temp)
         end
       end
       if tag_obj == nil or tag_obj.path == path then break end
-      ya.notify { title = "Bookmarks", content = "Duplicated tag", timeout = 1, level = "info" }
+      notify("Duplicated tag")
     end
   end
 
@@ -1327,7 +1084,7 @@ action_save = function(path, is_temp)
       local msg = (conflict == "duplicate")
         and ("Duplicated key sequence: " .. _seq_to_string(new_seq))
         or ("Ambiguous with existing sequence: " .. _seq_to_string(conflict_seq))
-      ya.notify { title = "Bookmarks", content = msg, timeout = 2, level = "info" }
+      notify(msg, "info", 2)
       key_display = input_str
     else
       break
@@ -1336,12 +1093,12 @@ action_save = function(path, is_temp)
 
   if is_temp then
     set_temp_bookmarks(path, { tag = tag, path = path, key = key })
-    ya.notify { title = "Bookmarks", content = '[TEMP] "' .. tag .. '" saved', timeout = 1, level = "info" }
+    notify('[TEMP] "' .. tag .. '" saved')
   else
     set_bookmarks(path, { tag = tag, path = path, key = key })
     local user_bookmarks = get_state_attr("bookmarks")
     save_to_file(mb_path, user_bookmarks)
-    ya.notify { title = "Bookmarks", content = '"' .. tag .. '" saved', timeout = 1, level = "info" }
+    notify('"' .. tag .. '" saved')
   end
 end
 
@@ -1354,7 +1111,7 @@ action_delete = function(path)
   local bookmark = temp_bookmarks[path] or user_bookmarks[path]
 
   if not bookmark then
-    ya.notify { title = "Bookmarks", content = 'Cannot delete: Not a user or temp bookmark', timeout = 2, level = "warn" }
+    notify('Cannot delete: Not a user or temp bookmark', "warn", 2)
     return
   end
   local tag = bookmark.tag
@@ -1362,12 +1119,12 @@ action_delete = function(path)
 
   if is_temp then
     set_temp_bookmarks(path, nil)
-    ya.notify { title = "Bookmarks", content = '[TEMP] "' .. tag .. '" deleted', timeout = 1, level = "info" }
+    notify('[TEMP] "' .. tag .. '" deleted')
   else
     set_bookmarks(path, nil)
     local updated_user_bookmarks = get_state_attr("bookmarks")
     save_to_file(mb_path, updated_user_bookmarks)
-    ya.notify { title = "Bookmarks", content = '"' .. tag .. '" deleted', timeout = 1, level = "info" }
+    notify('"' .. tag .. '" deleted')
   end
 end
 
@@ -1426,9 +1183,9 @@ action_delete_multi = function(paths)
 
   local final_message = table.concat(message_parts, ", ")
   if total_deleted > 0 then
-    ya.notify { title = "Bookmarks", content = final_message, timeout = 2, level = "info" }
+    notify(final_message, "info", 2)
   else
-    ya.notify { title = "Bookmarks", content = "No bookmarks were deleted", timeout = 1, level = "warn" }
+    notify("No bookmarks were deleted", "warn")
   end
 end
 
@@ -1437,17 +1194,17 @@ local action_delete_all = function(temp_only)
   local title = temp_only and "Delete all temporary bookmarks? ⟨y/n⟩" or "Delete all user bookmarks? ⟨y/n⟩"
   local value, event = ya.input({ title = title, pos = { "top-center", y = 3, w = 45 } })
   if event ~= 1 or string.lower(value or "") ~= "y" then
-    ya.notify { title = "Bookmarks", content = "Cancel delete", timeout = 1, level = "info" }
+    notify("Cancel delete")
     return
   end
 
   if temp_only then
     set_state_attr("temp_bookmarks", {})
-    ya.notify { title = "Bookmarks", content = "All temporary bookmarks deleted", timeout = 1, level = "info" }
+    notify("All temporary bookmarks deleted")
   else
     set_state_attr("bookmarks", {})
     save_to_file(mb_path, {})
-    ya.notify { title = "Bookmarks", content = "All user-created bookmarks deleted", timeout = 1, level = "info" }
+    notify("All user-created bookmarks deleted")
   end
 end
 
@@ -1457,31 +1214,26 @@ return {
         (os.getenv("HOME") .. "/.config/yazi/bookmarks")
     local bookmarks_path = options.bookmarks_path or options.path
     if type(bookmarks_path) == "string" and bookmarks_path ~= '' then
-        state.path = bookmarks_path
+      state.path = bookmarks_path
     else
-        state.path = default_path
+      state.path = default_path
     end
-    state.jump_notify = options.jump_notify == nil and false or options.jump_notify
-    state.home_alias_enabled = options.home_alias_enabled == nil and true or options.home_alias_enabled
-    state.path_truncate_enabled = options.path_truncate_enabled == nil and false or options.path_truncate_enabled
+
+    state.jump_notify = default(options.jump_notify, false)
+    state.home_alias_enabled = default(options.home_alias_enabled, true)
+    state.path_truncate_enabled = default(options.path_truncate_enabled, false)
     state.path_max_depth = options.path_max_depth or 3
-    state.fzf_path_truncate_enabled = options.fzf_path_truncate_enabled == nil and false or
-        options.fzf_path_truncate_enabled
+    state.fzf_path_truncate_enabled = default(options.fzf_path_truncate_enabled, false)
     state.fzf_path_max_depth = options.fzf_path_max_depth or 5
-    state.path_truncate_long_names_enabled = options.path_truncate_long_names_enabled == nil and false or
-        options.path_truncate_long_names_enabled
-    state.fzf_path_truncate_long_names_enabled = options.fzf_path_truncate_long_names_enabled == nil and false or
-        options.fzf_path_truncate_long_names_enabled
+    state.path_truncate_long_names_enabled = default(options.path_truncate_long_names_enabled, false)
+    state.fzf_path_truncate_long_names_enabled = default(options.fzf_path_truncate_long_names_enabled, false)
     state.path_max_folder_name_length = options.path_max_folder_name_length or 20
     state.fzf_path_max_folder_name_length = options.fzf_path_max_folder_name_length or 20
 
     state.history_size = options.history_size or 10
-    state.history_fzf_path_truncate_enabled = options.history_fzf_path_truncate_enabled == nil and false or
-        options.history_fzf_path_truncate_enabled
+    state.history_fzf_path_truncate_enabled = default(options.history_fzf_path_truncate_enabled, false)
     state.history_fzf_path_max_depth = options.history_fzf_path_max_depth or 5
-    state.history_fzf_path_truncate_long_names_enabled = options.history_fzf_path_truncate_long_names_enabled == nil and
-        false or
-        options.history_fzf_path_truncate_long_names_enabled
+    state.history_fzf_path_truncate_long_names_enabled = default(options.history_fzf_path_truncate_long_names_enabled, false)
     state.history_fzf_path_max_folder_name_length = options.history_fzf_path_max_folder_name_length or 30
 
     local special_keys_options = options.special_keys or {}
@@ -1505,7 +1257,6 @@ return {
 
     local function convert_simple_bookmarks(simple_bookmarks)
       local converted = {}
-      local path_sep = package.config:sub(1, 1)
       local home_path = ya.target_family() == "windows" and os.getenv("USERPROFILE") or os.getenv("HOME")
 
       for _, bookmark in ipairs(simple_bookmarks or {}) do
@@ -1600,7 +1351,7 @@ return {
       if is_hovered_directory() then
         action_save(get_hovered_path(), false)
       else
-        ya.notify { title = "Bookmarks", content = "Selected item is not a directory", timeout = 2, level = "warn" }
+        notify("Selected item is not a directory", "warn", 2)
       end
     elseif action == "save_cwd" then
       action_save(get_current_dir_path(), false)
@@ -1608,15 +1359,13 @@ return {
       if is_hovered_directory() then
         action_save(get_hovered_path(), true)
       else
-        ya.notify { title = "Bookmarks", content = "Selected item is not a directory", timeout = 2, level = "warn" }
+        notify("Selected item is not a directory", "warn", 2)
       end
     elseif action == "save_cwd_temp" then
       action_save(get_current_dir_path(), true)
     elseif action == "delete_by_key" then
       action_delete(which_find_deletable())
     elseif action == "delete_by_fzf" then
-      action_delete_multi(fzf_find_multi())
-    elseif action == "delete_multi_by_fzf" then
       action_delete_multi(fzf_find_multi())
     elseif action == "delete_all" then
       action_delete_all(false)
