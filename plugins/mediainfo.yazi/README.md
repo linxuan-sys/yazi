@@ -13,7 +13,8 @@ This is a Yazi plugin for previewing media files. The preview shows thumbnail
 using `ffmpeg` if available and media metadata using `mediainfo`.
 
 > [!IMPORTANT]
-> Minimum version: yazi v25.5.31.
+> Minimum version: yazi v26.1.22.
+> Check it via command `yazi --debug`
 
 ## Preview
 
@@ -70,29 +71,72 @@ Config folder for each OS: https://yazi-rs.github.io/docs/configuration/overview
 
 Create `.../yazi/yazi.toml` and add:
 
-> [!IMPORTANT]
->
-> For yazi (>=v25.12.29) replace `name` with `url`
-
 ```toml
 [plugin]
   prepend_preloaders = [
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo" },
     { mime = "application/subrip", run = "mediainfo" },
-    # Adobe Illustrator, Adobe Photoshop is image/adobe.photoshop, already handled above
+
+    # Adobe Photoshop is image/adobe.photoshop, already handled above
+    # Adobe Illustrator
     { mime = "application/postscript", run = "mediainfo" },
+    { mime = "application/illustrator", run = "mediainfo" },
+    { mime = "application/dvb.ait", run = "mediainfo" },
+    { mime = "application/vnd.adobe.illustrator", run = "mediainfo" },
+    { mime = "image/x-eps", run = "mediainfo" },
+    { mime = "application/eps", run = "mediainfo" },
+
+    # Sometimes AI file is recognized as "application/pdf". Lmao.
+    # In this case use file extension instead:
+    { url = "*.{ai,eps,ait}", run = "mediainfo" },
+
+    # Hide metadata by default.
+    # Example for image mimetype:
+    { mime = "{image}/*", run = "mediainfo --no-metadata" },
+
+    # Hide image preview by default.
+    # Example for video mimetype:
+    { mime = "{video}/*", run = "mediainfo --no-preview" },
+
+    # NOTE: Use both --no-metadata and --no-preview will display nothing. :)
+    # Make sure both of your previewers and preloaders has the same arguments (--no-metadata and --no-preview)
   ]
+
   prepend_previewers = [
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo"},
     { mime = "application/subrip", run = "mediainfo" },
-    # Adobe Illustrator, Adobe Photoshop is image/adobe.photoshop, already handled above
+
+    # Adobe Photoshop is image/adobe.photoshop, already handled above
+    # Adobe Illustrator
     { mime = "application/postscript", run = "mediainfo" },
+    { mime = "application/illustrator", run = "mediainfo" },
+    { mime = "application/dvb.ait", run = "mediainfo" },
+    { mime = "application/vnd.adobe.illustrator", run = "mediainfo" },
+    { mime = "image/x-eps", run = "mediainfo" },
+    { mime = "application/eps", run = "mediainfo" },
+
+    # Sometimes AI file is recognized as "application/pdf". Lmao.
+    # In this case use file extension instead:
+    { url = "*.{ai,eps,ait}", run = "mediainfo" },
+
+    # Hide metadata by default.
+    # Example for image mimetype:
+    { mime = "{image}/*", run = "mediainfo --no-metadata" },
+
+    # Hide image preview by default.
+    # Example for video mimetype:
+    { mime = "{video}/*", run = "mediainfo --no-preview" },
+
+    # NOTE: Use both --no-metadata and --no-preview will display nothing. :)
+    # Make sure both of your previewers and preloaders has the same arguments (--no-metadata and --no-preview)
   ]
-  # There are more extensions which are supported by mediainfo.
+
+  # There are more extensions, mime types which are supported by mediainfo.
   # Just add file's MIME type to `previewers`, `preloaders` above.
   # https://mediaarea.net/en/MediaInfo/Support/Formats
+  # If it's not working, file an issue at https://github.com/boydaihungst/mediainfo.yazi/issues
 
 # For a large file like Adobe Illustrator, Adobe Photoshop, etc
 # you may need to increase the memory limit if no image is rendered.
@@ -104,7 +148,7 @@ Create `.../yazi/yazi.toml` and add:
 
 ## Custom theme
 
-Using the same style with spotter. [Read more](https://github.com/sxyazi/yazi/pull/2391)
+Using the same style with spotter windows. [Read more](https://github.com/sxyazi/yazi/pull/2391)
 
 Edit or add `yazi/theme.toml`:
 
@@ -119,7 +163,7 @@ title = { fg = "green" }
 tbl_col = { fg = "blue" }
 ```
 
-## (Optional) Keymaps to hide metadata and to preview images in full screen
+## (Optional) Keymaps to toggle/show/hide/reset metadata and preview image
 
 > [!IMPORTANT]
 > Use any key you want, but make sure there is no conflicts with [default Keybindings](https://github.com/sxyazi/yazi/blob/main/yazi-config/preset/keymap-default.toml).
@@ -130,6 +174,23 @@ Or you can use `keymap` to replace all other keys
 ```toml
 [mgr]
   prepend_keymap = [
-    { on = "<F9>", run = "plugin mediainfo -- toggle-metadata", desc = "Toggle media preview metadata" },
+    { on = "<F3>", run = "plugin mediainfo -- toggle-metadata", desc = "Toggle media preview metadata" },
+    { on = "<F4>", run = "plugin mediainfo -- toggle-preview", desc = "Toggle media preview image" },
+
+    # Hide and show metadata, image
+    { on = "<F6>", run = "plugin mediainfo -- hide-metadata", desc = "Hide media preview metadata" },
+    { on = "<F7>", run = "plugin mediainfo -- hide-preview", desc = "Hide media preview image" },
+
+    { on = "<F8>", run = "plugin mediainfo -- show-metadata", desc = "Show media preview metadata" },
+    { on = "<F9>", run = "plugin mediainfo -- show-preview", desc = "Show media preview image" },
+
+    # Reset to defautl settings in yazi.toml file
+    { on = "<F5>", run = "plugin mediainfo -- reset", desc = "Reset media preview to default settings" },
+
+    # Use multiple actions
+    { on = "<F10>", run = "plugin mediainfo -- --toggle-preview --toggle-metadata", desc = "Toggle both media preview image and metadata" },
+    { on = "<F11>", run = "plugin mediainfo -- --show-preview --hide-metadata", desc = "Show media preview image and hide metadata" },
+    # You can also use all of them together (7 actions above). Priority is reset > toggle > hide > show
+    { on = "<F12>", run = "plugin mediainfo -- --show-preview --hide-metadata --reset --show-metadata --hide-preview", desc = "Show media preview image and hide metadata" },
   ]
 ```

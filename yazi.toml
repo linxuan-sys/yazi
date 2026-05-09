@@ -16,15 +16,8 @@ image_filter = "lanczos3"
 [plugin]
 prepend_preloaders = [
   { mime = "{audio,video,image}/*", run = "mediainfo" },
-  { mime = "application/subrip", run = "mediainfo" },
-  { mime = "application/postscript", run = "mediainfo" },
   { url = "/run/user/1000/gvfs/**/*", run = "noop" },
   { url = "/run/media/USER_NAME/**/*", run = "noop" },
-  { url = "*.csv", run = "duckdb", multi = false },
-  { url = "*.tsv", run = "duckdb", multi = false },
-  { url = "*.json", run = "duckdb", multi = false },
-  { url = "*.parquet", run = "duckdb", multi = false },
-  { url = "*.xlsx", run = "duckdb", multi = false },
 ]
 prepend_previewers = [
   { mime = "{audio,video,image}/*", run = "mediainfo" },
