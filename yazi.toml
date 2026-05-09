@@ -33,7 +33,7 @@ prepend_previewers = [
   { url = "*.xlsx", run = "duckdb" },
   { url = "*.db", run = "duckdb" },
   { url = "*.duckdb", run = "duckdb" },
-  { url = "*.docx", run = "docx" },
+  { url = "*.docx", run = "docx-preview" },
 ]
 [tasks]
 image_alloc = 1073741824 # = 1024*1024*1024 = 1024MB
