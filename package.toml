@@ -63,6 +63,11 @@ use = "uhs-robert/recycle-bin"
 rev = "fa68711"
 hash = "8714306b5cac6359edbacbf545fbd691"
 
+[[plugin.deps]]
+use = "linxuan-sys/docx-preview"
+rev = "9448288"
+hash = "ccbbca8053585b2e637858dc416e4044"
+
 [[flavor.deps]]
 use = "yazi-rs/flavors:dracula"
 rev = "0670801"
