@@ -187,7 +187,7 @@ prepend_keymap = [
   { on = "Y",         run = "unyank",                      desc = "取消复制/剪切状态" },
   { on = "X",         run = "unyank",                      desc = "取消复制/剪切状态" },
   { on = "d",         run = "remove",                      desc = "移动到回收站" },
-  { on = "D",         run = "remove -- --permanently",        desc = "永久删除" },
+  { on = "D",         run = "remove --permanently",        desc = "永久删除" },
   { on = "a",         run = "create",                      desc = "创建文件/目录(以/结尾创建目录)" },
   { on = ";",         run = "shell --interactive",         desc = "运行交互式shell命令" },
   { on = ":",         run = "shell --block --interactive", desc = "运行阻塞式shell命令" },
