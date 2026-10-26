@@ -152,7 +152,7 @@ keymap = [
   #=======================
   # 选择与视觉模式
   # =======================
-  { on = "<Space>", run = ["toggle", "plugin augment-command -- arrow 1 --no-wrap"], desc = "切换当前选择状态" },
+  { on = "<Space>", run = ["toggle", "arrow 1"], desc = "切换当前选择状态" },
   { on = "<C-a>",   run = "toggle_all --state=on", desc = "选择所有文件" },
   { on = "<C-r>",   run = "toggle_all",            desc = "反选所有文件" },
   { on = "v", run = "visual_mode",         desc = "视觉模式(选择模式)" },
