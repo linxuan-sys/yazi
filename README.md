@@ -18,7 +18,7 @@
 | `preview-typst` | `.typ` 排版文档预览 | 依赖 `typst` |
 | `gvfs` | 挂载 MTP / SMB / SFTP / WebDAV 等设备与远程存储 | `M` 系列、`G m`；依赖 `gvfs`、`glib` |
 | `mount` | 本地磁盘分区挂载 / 卸载 / 弹出 | `M p`；依赖 `udisks2`、`util-linux` |
-| `ouch` | 压缩 / 解压（自动适配格式） | `c z`；依赖 `ouch` |
+| `ouch` | 压缩（按输出文件名后缀自动选格式；解压走 Yazi 内置 `7z`） | `c z`；依赖 `ouch` |
 | `yamb` | 书签管理：持久化保存、按键跳转、fzf 搜索、重命名 | `[` 存、`]` 跳、`\g` 跳、`\r` 改名、`\d` 删、`\G`/`\D`/`\R` 走 fzf、`\a` 存、`\A` 清空；fzf 功能依赖 `fzf` |
 | `bypass` | 自动穿透「只有一个子目录」的目录链 | 配合 `→` 使用 |
 | `smart-enter` | 目录则进入、文件则打开的「二合一」动作 | 通过 `bypass` 调用 |

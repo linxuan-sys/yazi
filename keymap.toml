@@ -113,8 +113,8 @@ keymap = [
   { on = "q",     run = "quit",               desc = "退出程序" },
   { on = "Q",     run = "quit --no-cwd-file", desc = "退出且不输出cwd文件" },
   { on = [ "t", "t" ], run = "tab_create --current",   desc = "在当前目录新建标签页" },
-  { on = [ "t", "r" ], run = "tab_rename --interactive", desc = "重命名当前标签页" },
   { on = [ "t", "q" ], run = "close",              desc = "关闭当前标签页，如是最后一个则退出" },
+  { on = [ "t", "r" ], run = "tab_rename --interactive", desc = "重命名当前标签页" },
   { on = "<C-z>", run = "suspend",            desc = "挂起程序" },
 
 
@@ -133,8 +133,8 @@ keymap = [
   { on = "<PageDown>", run = "arrow 50%",   desc = "向下移动半页" },
   { on = "<S-PageUp>",     run = "arrow -100%", desc = "向上移动一页" },
   { on = "<S-PageDown>",   run = "arrow 100%",  desc = "向下移动一页" },
-  { on = [ "g", "g" ], run = "arrow top", desc = "顶部" },
-  { on = ["g" , "b"],   run = "arrow bot", desc = "底部" },
+  { on = ["g", "g"], run = "arrow top", desc = "顶部" },
+  { on = ["g", "b"], run = "arrow bot", desc = "底部" },
 
 
   # =======================
