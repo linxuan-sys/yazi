@@ -1,6 +1,6 @@
 # Yazi 汉化增强配置
 
-> 一套基于 [Yazi](https://github.com/sxyazi/yazi) 的**中文增强配置**：界面提示全部汉化，内置 16 个实用插件，开箱即用。
+> 一套基于 [Yazi](https://github.com/sxyazi/yazi) 的**中文增强配置**：界面提示全部汉化，内置 14 个实用插件，开箱即用。
 
 - 适用版本：**Yazi 26.9.1**
 - 面向用户：中文用户
@@ -22,13 +22,12 @@
 | `yamb` | 书签管理：持久化保存、按键跳转、fzf 搜索、重命名 | `[` 存、`]` 跳、`\g` 跳、`\r` 改名、`\d` 删、`\G`/`\D`/`\R` 走 fzf、`\a` 存、`\A` 清空；fzf 功能依赖 `fzf` |
 | `bypass` | 自动穿透「只有一个子目录」的目录链 | 配合 `→` 使用 |
 | `smart-enter` | 目录则进入、文件则打开的「二合一」动作 | 通过 `bypass` 调用 |
-| `augment-command` | 增强命令：选中后自动下移（不循环）等 | `<Space>` 选中后下移 |
 | `open-with-cmd` | 用自定义命令打开文件 | `o c` |
 | `full-border` | 给三栏界面加完整圆角边框 | 启动即生效 |
 | `starship` | 顶部渲染 starship 提示符 | 依赖 `starship` |
 | `simple-status` | 精简底部状态栏 | 启动即生效 |
 
-> `package.toml` 锁定 16 个插件与 2 个现成主题（`dracula`、`catppuccin-mocha`），
+> `package.toml` 锁定 14 个插件与 2 个现成主题（`dracula`、`catppuccin-mocha`），
 > 全部由 `ya pkg install` 自动安装，无需任何手动步骤。
 
 ---
@@ -75,7 +74,7 @@
    默认的 `Alt+B` / `Alt+F` / `Ctrl+←` / `Ctrl+→` 的 "lean" 变体改为普通单词移动。
 
 7. **其他小调整**
-   - `<Space>` 选中后自动下移且不循环（借助 `augment-command`）
+   - `<Space>` 选中后自动下移且不循环（原生 `toggle` + `arrow 1`；`arrow 1` 按偏移量移动，到末行即停不回绕）
    - `→` 使用 `bypass smart-enter`（目录进、文件开）
    - `PageUp/PageDown` 与 `Shift+PageUp/PageDown` 的半页/整页对调
    - `<C-Up>` / `<C-Down>` 预览上下滚动 5 行（与 `K` / `J` 等价）

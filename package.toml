@@ -49,11 +49,6 @@ rev = "4a0c70e"
 hash = "3c66d95bf63fa16178e98967fbae9429"
 
 [[plugin.deps]]
-use = "hankertrix/augment-command"
-rev = "561f6ec"
-hash = "38b093d444efe1386e0e959aa5be11f8"
-
-[[plugin.deps]]
 use = "yazi-rs/plugins:smart-enter"
 rev = "e0bbd20"
 hash = "187cc58ba7ac3befd49c342129e6f1b6"
