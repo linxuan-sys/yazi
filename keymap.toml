@@ -141,10 +141,9 @@ keymap = [
   # 目录导航(与vim一致)
   # =======================
   { on = "h", run = "leave", desc = "返回上级目录" },
-  { on = "l", run = "enter", desc = "进入子目录" },
+  { on = "l", run = "plugin bypass smart-enter", desc = "智能进入光标下的目录或打开文件" },
   { on = "<Left>",  run = "leave", desc = "返回上级目录" },
-  #{ on = "<Right>", run = "enter", desc = "进入子目录" },
-  { on = "<Right>", run = "plugin bypass smart-enter", desc = "进入光标下的目录或打开文件(智能进入 →)" },
+  { on = "<Right>", run = "plugin bypass smart-enter", desc = "智能进入光标下的目录或打开文件" },
   { on = "<S-Left>", run = "back",    desc = "上一个目录" },
   { on = "<S-Right>", run = "forward", desc = "下一个目录" },
 
